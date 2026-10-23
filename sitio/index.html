@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PHREEQC en el navegador</title>
+<meta name="description" content="Especiación, saturación de minerales y barridos de pH y temperatura con PHREEQC. Los cálculos corren en tu navegador.">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta name="referrer" content="no-referrer">
+<link rel="stylesheet" href="estilos.css">
+</head>
+<body>
+
+<header class="cabecera">
+  <div class="contenedor">
+    <h1>PHREEQC en el navegador</h1>
+    <p class="sub">Especiación de aguas, saturación de minerales y barridos de pH y temperatura. Los cálculos se hacen en tu equipo: no se envía ningún dato.</p>
+  </div>
+</header>
+
+<main class="contenedor">
+
+  <nav class="pestanas" role="tablist" aria-label="Secciones">
+    <button role="tab" id="t-muestra" aria-selected="true" aria-controls="p-muestra">Muestra de agua</button>
+    <button role="tab" id="t-barrido" aria-selected="false" aria-controls="p-barrido">Barrido de pH y temperatura</button>
+    <button role="tab" id="t-avanzado" aria-selected="false" aria-controls="p-avanzado">Archivo avanzado</button>
+    <button role="tab" id="t-acerca" aria-selected="false" aria-controls="p-acerca">Acerca de</button>
+  </nav>
+
+  <!-- ===== Formulario compartido de la muestra ===== -->
+  <section id="form-muestra" class="tarjeta">
+    <h2>1. Describe la muestra</h2>
+
+    <div class="fila">
+      <label>Ejemplo de partida
+        <select id="preset"></select>
+      </label>
+      <label>Base de datos
+        <select id="base"></select>
+      </label>
+      <label>Unidades de concentración
+        <select id="unidades">
+          <option value="mg/l">mg/L (por litro de solución)</option>
+          <option value="ug/l">µg/L (por litro de solución)</option>
+          <option value="ppm">ppm (mg/kg de solución)</option>
+          <option value="ppb">ppb (µg/kg de solución)</option>
+          <option value="mmol/l">mmol/L</option>
+          <option value="mol/kgw">mol/kg de agua</option>
+        </select>
+      </label>
+    </div>
+
+    <div class="fila">
+      <label>pH <input id="ph" type="text" inputmode="decimal" value="7"></label>
+      <label>Temperatura (°C) <input id="temp" type="text" inputmode="decimal" value="25"></label>
+      <label>pe <input id="pe" type="text" inputmode="decimal" value="4"></label>
+      <label>Densidad (kg/L) <input id="dens" type="text" inputmode="decimal" value="1"></label>
+      <label>Balance de carga
+        <select id="carga">
+          <option value="none">No ajustar</option>
+          <option value="pH">Ajustar el pH</option>
+          <option value="Cl">Ajustar cloruro</option>
+          <option value="Na">Ajustar sodio</option>
+        </select>
+      </label>
+    </div>
+
+    <details class="elementos" open>
+      <summary>Concentraciones (deja en blanco lo que no midas)</summary>
+      <div id="rejilla-elem" class="rejilla"></div>
+    </details>
+
+    <div id="aviso-muestra" class="aviso" role="alert" hidden></div>
+  </section>
+
+  <!-- ===== Pestaña: especiación y saturación ===== -->
+  <section id="p-muestra" role="tabpanel" aria-labelledby="t-muestra" class="tarjeta">
+    <h2>2. Especiación y saturación</h2>
+    <p class="ayuda">Calcula las especies presentes, la fuerza iónica, el balance de carga y los índices de saturación (SI) de los minerales.</p>
+    <div class="acciones">
+      <button id="btn-calcular" class="primario">Calcular</button>
+      <button id="btn-ver-entrada" class="secundario" disabled>Ver archivo de entrada</button>
+      <button id="btn-bajar-salida" class="secundario" disabled>Descargar salida completa</button>
+    </div>
+    <div id="estado-muestra" class="estado" aria-live="polite"></div>
+    <div id="resultados-muestra" hidden>
+      <div id="tarjetas" class="tarjetas"></div>
+
+      <h3>Índices de saturación</h3>
+      <div class="controles">
+        <label class="inline"><input type="checkbox" id="solo-interes" checked> Solo minerales habituales</label>
+        <label class="inline">Buscar <input type="search" id="buscar-si" placeholder="p. ej. calc"></label>
+      </div>
+      <p class="ayuda">SI = log(IAP/K). Mayor que 0: sobresaturado (tiende a precipitar). Menor que 0: subsaturado (tiende a disolverse). Cerca de 0: en equilibrio.</p>
+      <div class="tabla-wrap"><table id="tabla-si"></table></div>
+
+      <h3>Especies en solución</h3>
+      <div class="controles">
+        <label class="inline"><input type="checkbox" id="todas-esp"> Mostrar todas</label>
+      </div>
+      <div class="tabla-wrap"><table id="tabla-esp"></table></div>
+    </div>
+    <pre id="entrada-generada" class="codigo" hidden></pre>
+  </section>
+
+  <!-- ===== Pestaña: barrido ===== -->
+  <section id="p-barrido" role="tabpanel" aria-labelledby="t-barrido" class="tarjeta" hidden>
+    <h2>2. Barrido de pH y temperatura</h2>
+    <p class="ayuda">Usa la composición de arriba y calcula todas las combinaciones del rango. Se conserva la composición total de la muestra (incluido el carbono inorgánico) y se llega a cada pH agregando ácido (HCl) o base (NaOH), como en una titulación. La columna "Ácido (−) o base (+) agregado" indica cuánto se necesitó (incluye la corrección del desbalance de carga de la muestra original, si lo tiene). Si algún punto no converge, se omite y se te avisa cuál.</p>
+
+    <div class="fila">
+      <label>pH mínimo <input id="b-phmin" type="text" inputmode="decimal" value="4"></label>
+      <label>pH máximo <input id="b-phmax" type="text" inputmode="decimal" value="10"></label>
+      <label>Paso de pH <input id="b-phstep" type="text" inputmode="decimal" value="0.5"></label>
+      <label>T mínima (°C) <input id="b-tmin" type="text" inputmode="decimal" value="10"></label>
+      <label>T máxima (°C) <input id="b-tmax" type="text" inputmode="decimal" value="40"></label>
+      <label>Paso de T (°C) <input id="b-tstep" type="text" inputmode="decimal" value="15"></label>
+    </div>
+
+    <details class="elementos" open>
+      <summary>Qué calcular en cada punto</summary>
+      <p class="ayuda">Minerales (índice de saturación):</p>
+      <div id="b-minerales" class="rejilla rejilla-chica"></div>
+      <label class="bloque">Especies acuosas (molalidad), separadas por coma
+        <input id="b-especies" type="text" value="HCO3-, CO3-2, CO2">
+      </label>
+    </details>
+
+    <div class="acciones">
+      <button id="btn-barrer" class="primario">Calcular barrido</button>
+      <button id="btn-csv" class="secundario" disabled>Descargar CSV</button>
+    </div>
+    <div id="estado-barrido" class="estado" aria-live="polite"></div>
+
+    <div id="resultados-barrido" hidden>
+      <div class="controles">
+        <label class="inline">Variable del gráfico <select id="b-variable"></select></label>
+      </div>
+      <figure class="grafico">
+        <svg id="grafico" viewBox="0 0 760 440" role="img" aria-label="Gráfico del barrido"></svg>
+        <figcaption id="leyenda" class="leyenda"></figcaption>
+      </figure>
+      <h3>Tabla de resultados</h3>
+      <div class="tabla-wrap"><table id="tabla-barrido"></table></div>
+    </div>
+  </section>
+
+  <!-- ===== Pestaña: avanzado ===== -->
+  <section id="p-avanzado" role="tabpanel" aria-labelledby="t-avanzado" class="tarjeta" hidden>
+    <h2>Archivo de entrada de PHREEQC</h2>
+    <p class="ayuda">Escribe, pega o carga un archivo de entrada. Es PHREEQC completo: puedes definir reacciones, mezclas, titulaciones y todo lo que permite el programa.</p>
+    <div class="fila">
+      <label>Ejemplo oficial
+        <select id="a-ejemplo"><option value="">— elegir —</option></select>
+      </label>
+      <label>Base de datos
+        <select id="a-base"></select>
+      </label>
+      <label>Cargar archivo
+        <input id="a-archivo" type="file">
+      </label>
+    </div>
+    <textarea id="a-entrada" class="codigo editor" spellcheck="false" rows="16" placeholder="Pega aquí tu archivo de entrada de PHREEQC"></textarea>
+    <div class="acciones">
+      <button id="a-ejecutar" class="primario">Ejecutar</button>
+      <button id="a-bajar" class="secundario" disabled>Descargar salida</button>
+    </div>
+    <div id="a-estado" class="estado" aria-live="polite"></div>
+    <pre id="a-salida" class="codigo salida" hidden></pre>
+  </section>
+
+  <!-- ===== Pestaña: acerca ===== -->
+  <section id="p-acerca" role="tabpanel" aria-labelledby="t-acerca" class="tarjeta" hidden>
+    <h2>Acerca de esta herramienta</h2>
+    <p>Esta página ejecuta <strong>PHREEQC versión 3.8.6</strong> (Servicio Geológico de Estados Unidos, USGS) compilado a WebAssembly. Todo el cálculo ocurre en tu navegador; los datos que ingresas no salen de tu equipo.</p>
+    <p>El motor se validó comparando su salida con la versión de línea de comandos para el ejemplo 1 del manual (agua de mar): mismos valores de pH y de fuerza iónica.</p>
+    <h3>Buenas prácticas</h3>
+    <ul>
+      <li>Revisa siempre el <strong>balance de carga</strong>: un error alto indica que falta algún ion o que hay un dato mal ingresado.</li>
+      <li>Cada base de datos tiene su <strong>rango de validez</strong> (temperatura, fuerza iónica). Las bases tipo Pitzer o SIT se usan para aguas muy salinas.</li>
+      <li>Los resultados son un <strong>modelo</strong>: contrástalos con tus mediciones y con la literatura.</li>
+    </ul>
+    <h3>Cómo citar PHREEQC</h3>
+    <p>Parkhurst, D.L., y Appelo, C.A.J., 2013, Description of input and examples for PHREEQC version 3: a computer program for speciation, batch-reaction, one-dimensional transport, and inverse geochemical calculations: U.S. Geological Survey Techniques and Methods, book 6, chap. A43, 497 p.</p>
+    <p class="ayuda">Más información: <a href="https://www.usgs.gov/software/phreeqc-version-3" rel="noopener">página oficial de PHREEQC (USGS)</a>.</p>
+  </section>
+
+</main>
+
+<footer class="pie contenedor">
+  <p>PHREEQC 3.8.6 (USGS) · WebAssembly · Los cálculos se realizan localmente en el navegador.</p>
+</footer>
+
+<script src="phreeqc.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,14 @@
+/*
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  Referrer-Policy: no-referrer
+
+/phreeqc.wasm
+  Cache-Control: public, max-age=86400
+  Content-Type: application/wasm
+
+/database/*
+  Cache-Control: public, max-age=86400
+
+/examples/*
+  Cache-Control: public, max-age=86400

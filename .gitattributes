@@ -1,0 +1,3 @@
+# Guardar los archivos tal cual (sin convertir saltos de línea): bases de datos y motor deben ser idénticos al original
+* -text
+*.wasm binary

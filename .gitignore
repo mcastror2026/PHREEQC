@@ -1,0 +1,10 @@
+# Copia de trabajo del compilado completo y material de validación (no se publica)
+stage/
+validacion/
+
+# Registros y temporales
+*.log
+*.tgz
+node_modules/
+.DS_Store
+Thumbs.db
