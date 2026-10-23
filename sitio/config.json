@@ -22,11 +22,6 @@
       "guiada": true
     },
     {
-      "archivo": "didactica.dat",
-      "nombre": "didactica.dat — base pequeña y comentada para enseñar (Ca–Na–Cl–carbonato)",
-      "guiada": true
-    },
-    {
       "archivo": "pitzer.dat",
       "nombre": "pitzer.dat — salmueras (Pitzer)",
       "guiada": false
@@ -82,26 +77,6 @@
       "archivo": "ex7",
       "nombre": "Ej. 7 — Descomposición de materia orgánica",
       "base": "phreeqc.dat"
-    },
-    {
-      "archivo": "ped1",
-      "nombre": "Ped. 1 — Agua de lluvia: pH del agua pura con el CO₂ de la atmósfera",
-      "base": "didactica.dat"
-    },
-    {
-      "archivo": "ped2",
-      "nombre": "Ped. 2 — Solubilidad de la calcita a distintas presiones de CO₂",
-      "base": "didactica.dat"
-    },
-    {
-      "archivo": "ped3",
-      "nombre": "Ped. 3 — Efecto de la temperatura en la solubilidad de la calcita",
-      "base": "didactica.dat"
-    },
-    {
-      "archivo": "ped4",
-      "nombre": "Ped. 4 — Efecto de la fuerza iónica (NaCl) en la solubilidad de la calcita",
-      "base": "didactica.dat"
     }
   ],
   "minerales_habituales": [

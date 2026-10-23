@@ -1,9 +1,0 @@
-TITLE Ejercicio 1.-- Agua de lluvia: agua pura en equilibrio con el CO2 de la atmosfera
-# Base de datos: didactica.dat
-# Pregunta: ¿que pH tiene la lluvia "limpia"? (pCO2 atmosferico = 10^-3.4 atm)
-# Tarea: cambia el log de la presion (-3.4) por -2.0 y -1.0 y observa el pH.
-SOLUTION 1  Agua pura
-    temp 25
-EQUILIBRIUM_PHASES 1
-    CO2(g) -3.4
-END

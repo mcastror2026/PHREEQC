@@ -58,8 +58,6 @@ La lista de bases, los ejemplos y los minerales habituales están en `sitio/conf
 **Actualizar PHREEQC:** recompilar según `COMPILACION.md` y reemplazar `sitio/phreeqc.js` y
 `sitio/phreeqc.wasm`; el resto no cambia. Después hay que repetir la validación (ejemplos 1 a 7).
 
-**Base didáctica:** `sitio/database/didactica.dat` (Ca–Na–Cl–carbonato, comentada en español) y
-los ejercicios `ped1` a `ped4` en `sitio/examples/`. No es apta para trabajo científico.
 Si `config.json` falta o tiene errores, la página usa una lista incorporada en `app.js`.
 
 ## Probar en local
