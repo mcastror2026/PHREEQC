@@ -38,6 +38,9 @@
       <label>Base de datos
         <select id="base"></select>
       </label>
+      <label>Usar una base propia (.dat), opcional
+        <input id="base-propia" type="file" accept=".dat,.txt">
+      </label>
       <label>Unidades de concentración
         <select id="unidades">
           <option value="mg/l">mg/L (por litro de solución)</option>
@@ -91,7 +94,7 @@
         <label class="inline"><input type="checkbox" id="solo-interes" checked> Solo minerales habituales</label>
         <label class="inline">Buscar <input type="search" id="buscar-si" placeholder="p. ej. calc"></label>
       </div>
-      <p class="ayuda">SI = log(IAP/K). Mayor que 0: sobresaturado (tiende a precipitar). Menor que 0: subsaturado (tiende a disolverse). Cerca de 0: en equilibrio.</p>
+      <p class="ayuda">SI = log(IAP/K) y Ω = 10^SI. Mayor que 0: sobresaturado (tiende a precipitar). Menor que 0: subsaturado (tiende a disolverse). Cerca de 0: en equilibrio. <strong>ΔG de disolución</strong> = RT·ln(IAP/K) = 2,3026·R·T·SI, para la reacción de disolución tal como está escrita en la base (positivo: la disolución no es espontánea; negativo: sí). <strong>ΔG°</strong> = −RT·ln K(T), con log K(T) = log IAP − SI (el log K de la tabla es el de 298 K). Para gases, SI es el logaritmo de la fugacidad relativa.</p>
       <div class="tabla-wrap"><table id="tabla-si"></table></div>
 
       <h3>Especies en solución</h3>
@@ -174,6 +177,9 @@
     <h2>Acerca de esta herramienta</h2>
     <p>Esta página ejecuta <strong>PHREEQC versión 3.8.6</strong> (Servicio Geológico de Estados Unidos, USGS) compilado a WebAssembly. Todo el cálculo ocurre en tu navegador; los datos que ingresas no salen de tu equipo.</p>
     <p>El motor se validó comparando su salida con la versión de línea de comandos para el ejemplo 1 del manual (agua de mar): mismos valores de pH y de fuerza iónica.</p>
+    <h3>Para enseñar</h3>
+    <p>La base <strong>didactica.dat</strong> es muy pequeña (sistema Ca–Na–Cl–carbonato) y está comentada en español: se puede leer completa y modificar. En "Archivo avanzado" hay cuatro ejercicios (<em>Ped. 1 a 4</em>) que la usan: pH de la lluvia, solubilidad de la calcita según el CO₂, la temperatura y la fuerza iónica. No es apta para trabajo científico; para eso usa phreeqc.dat o wateq4f.dat.</p>
+    <p>También puedes usar <strong>tu propia base de datos</strong> (.dat) con el selector de la parte superior: se lee solo en tu navegador y no se sube a ningún lado.</p>
     <h3>Buenas prácticas</h3>
     <ul>
       <li>Revisa siempre el <strong>balance de carga</strong>: un error alto indica que falta algún ion o que hay un dato mal ingresado.</li>

@@ -1,0 +1,140 @@
+{
+  "_ayuda": "Para agregar una base de datos: copia el archivo .dat a la carpeta database/ y agrega una línea en 'bases'. 'guiada': true la muestra también en el formulario guiado (requiere nombres de elementos como en phreeqc.dat).",
+  "bases": [
+    {
+      "archivo": "phreeqc.dat",
+      "nombre": "phreeqc.dat — general (recomendada)",
+      "guiada": true
+    },
+    {
+      "archivo": "wateq4f.dat",
+      "nombre": "wateq4f.dat — aguas naturales, muchos minerales",
+      "guiada": true
+    },
+    {
+      "archivo": "minteq.v4.dat",
+      "nombre": "minteq.v4.dat — MINTEQ v4",
+      "guiada": true
+    },
+    {
+      "archivo": "minteq.dat",
+      "nombre": "minteq.dat — MINTEQ",
+      "guiada": true
+    },
+    {
+      "archivo": "didactica.dat",
+      "nombre": "didactica.dat — base pequeña y comentada para enseñar (Ca–Na–Cl–carbonato)",
+      "guiada": true
+    },
+    {
+      "archivo": "pitzer.dat",
+      "nombre": "pitzer.dat — salmueras (Pitzer)",
+      "guiada": false
+    },
+    {
+      "archivo": "sit.dat",
+      "nombre": "sit.dat — fuerza iónica alta (SIT)",
+      "guiada": false
+    },
+    {
+      "archivo": "llnl.dat",
+      "nombre": "llnl.dat — LLNL",
+      "guiada": false
+    },
+    {
+      "archivo": "Amm.dat",
+      "nombre": "Amm.dat — con amoníaco",
+      "guiada": false
+    }
+  ],
+  "ejemplos": [
+    {
+      "archivo": "ex1",
+      "nombre": "Ej. 1 — Agregar uranio y especiar agua de mar",
+      "base": "phreeqc.dat"
+    },
+    {
+      "archivo": "ex2",
+      "nombre": "Ej. 2 — Dependencia de la solubilidad con la temperatura",
+      "base": "phreeqc.dat"
+    },
+    {
+      "archivo": "ex3",
+      "nombre": "Ej. 3 — Equilibrio de calcita con CO₂",
+      "base": "phreeqc.dat"
+    },
+    {
+      "archivo": "ex4",
+      "nombre": "Ej. 4 — Evaporación de agua de lluvia",
+      "base": "phreeqc.dat"
+    },
+    {
+      "archivo": "ex5",
+      "nombre": "Ej. 5 — Oxígeno, pirita, calcita y goethita",
+      "base": "phreeqc.dat"
+    },
+    {
+      "archivo": "ex6",
+      "nombre": "Ej. 6 — Reacciones hasta límites de fase",
+      "base": "phreeqc.dat"
+    },
+    {
+      "archivo": "ex7",
+      "nombre": "Ej. 7 — Descomposición de materia orgánica",
+      "base": "phreeqc.dat"
+    },
+    {
+      "archivo": "ped1",
+      "nombre": "Ped. 1 — Agua de lluvia: pH del agua pura con el CO₂ de la atmósfera",
+      "base": "didactica.dat"
+    },
+    {
+      "archivo": "ped2",
+      "nombre": "Ped. 2 — Solubilidad de la calcita a distintas presiones de CO₂",
+      "base": "didactica.dat"
+    },
+    {
+      "archivo": "ped3",
+      "nombre": "Ped. 3 — Efecto de la temperatura en la solubilidad de la calcita",
+      "base": "didactica.dat"
+    },
+    {
+      "archivo": "ped4",
+      "nombre": "Ped. 4 — Efecto de la fuerza iónica (NaCl) en la solubilidad de la calcita",
+      "base": "didactica.dat"
+    }
+  ],
+  "minerales_habituales": [
+    "Calcite",
+    "Aragonite",
+    "Dolomite",
+    "Magnesite",
+    "Siderite",
+    "Rhodochrosite",
+    "Strontianite",
+    "Gypsum",
+    "Anhydrite",
+    "Barite",
+    "Celestite",
+    "Halite",
+    "Fluorite",
+    "Quartz",
+    "Chalcedony",
+    "SiO2(a)",
+    "Brucite",
+    "Gibbsite",
+    "Kaolinite",
+    "Fe(OH)3(a)",
+    "Goethite",
+    "Hematite",
+    "Pyrite"
+  ],
+  "minerales_barrido_defecto": [
+    "Calcite",
+    "Aragonite",
+    "Dolomite",
+    "Gypsum",
+    "Siderite",
+    "Fe(OH)3(a)"
+  ]
+}

@@ -1,0 +1,22 @@
+TITLE Ejercicio 3.-- Efecto de la temperatura en la solubilidad de la calcita
+# Base de datos: didactica.dat
+# Pregunta: ¿la calcita es mas soluble en agua fria o en agua caliente? ¿Por que?
+# (pista: mira el signo de -delta_h de la calcita en la base de datos)
+SOLUTION 1  Agua a 5 C
+    temp 5
+EQUILIBRIUM_PHASES 1
+    Calcite 0.0 10.0
+    CO2(g) -3.4
+END
+SOLUTION 2  Agua a 25 C
+    temp 25
+EQUILIBRIUM_PHASES 2
+    Calcite 0.0 10.0
+    CO2(g) -3.4
+END
+SOLUTION 3  Agua a 45 C
+    temp 45
+EQUILIBRIUM_PHASES 3
+    Calcite 0.0 10.0
+    CO2(g) -3.4
+END

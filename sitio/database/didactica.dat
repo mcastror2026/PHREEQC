@@ -1,0 +1,129 @@
+# =====================================================================
+#  BASE DE DATOS DIDÁCTICA PARA PHREEQC
+#  Sistema:  Ca – Na – Cl – carbonato (agua, CO2, calcita y halita)
+# =====================================================================
+#  Esta base es MUY PEQUEÑA a propósito: se puede leer completa y
+#  modificar para entender cómo funciona una base de datos de PHREEQC.
+#  Las constantes (log_k, delta_h, parámetros de actividad) están
+#  tomadas de phreeqc.dat (USGS), pero se dejó solo lo esencial, así
+#  que NO es apta para trabajo científico: usa phreeqc.dat o wateq4f.dat.
+#
+#  Una base se compone de bloques (palabras clave en mayúsculas):
+#    1) SOLUTION_MASTER_SPECIES : los "elementos" que se pueden usar en SOLUTION
+#    2) SOLUTION_SPECIES        : las especies acuosas y sus equilibrios
+#    3) PHASES                  : minerales y gases (para índices de saturación)
+#  Todo lo que sigue a un # es un comentario.
+#
+#  Ejercicios sugeridos (en la pestaña "Archivo avanzado" hay ejemplos
+#  "Ped. 1" a "Ped. 4" que usan esta base):
+#    - ¿Qué pasa con el pH si quito la especie CO2? (borra su bloque y recalcula)
+#    - Cambia el log_k de la calcita y observa el índice de saturación.
+#    - Agrega Mg: necesitas una línea en MASTER_SPECIES, su especie Mg+2 y
+#      al menos un mineral (por ejemplo, dolomita o magnesita).
+# =====================================================================
+
+SOLUTION_MASTER_SPECIES
+# elemento   especie_primaria   alcalinidad   fórmula(g/mol)   masa atómica
+#   - "alcalinidad" es cuántos equivalentes de alcalinidad aporta la especie primaria.
+#   - H, O y e- (electrón) son necesarios siempre: permiten calcular pH y pe.
+H          H+        -1.0    H            1.008
+H(0)       H2         0.0    H
+H(1)       H+        -1.0    0.0
+E          e-         0.0    0.0          0.0
+O          H2O        0.0    O            16.00
+O(0)       O2         0.0    O
+O(-2)      H2O        0.0    0.0
+# Elementos del sistema de la base:
+Ca         Ca+2       0.0    Ca           40.08
+Na         Na+        0.0    Na           22.9898
+Cl         Cl-        0.0    Cl           35.453
+# Carbono inorgánico. Se ingresa como C(4) o C, y la alcalinidad se da como "Alkalinity".
+C          CO3-2      2.0    HCO3         12.0111
+C(4)       CO3-2      2.0    HCO3
+Alkalinity CO3-2      1.0    Ca0.5(CO3)0.5  50.05
+
+SOLUTION_SPECIES
+# Cada especie se define por una reacción y su constante de equilibrio:
+#   -log_k    logaritmo de la constante de equilibrio a 25 °C
+#   -delta_h  entalpía de reacción: PHREEQC la usa para corregir log_k con la temperatura
+#   -gamma a b  parámetros del coeficiente de actividad (ecuación de Debye-Hückel extendida)
+#
+# --- Especies primarias (se definen a sí mismas; log_k = 0) ---
+H+ = H+
+	-gamma 9.0 0.0
+e- = e-
+H2O = H2O
+Na+ = Na+
+	-gamma 4.0 0.075
+Ca+2 = Ca+2
+	-gamma 5.0 0.165
+Cl- = Cl-
+	-gamma 3.5 0.015
+CO3-2 = CO3-2
+	-gamma 5.4 0.0
+
+# --- Disociación del agua: define el pH (a 25 °C, pKw = 14) ---
+H2O = OH- + H+
+	-log_k -14.0
+	-delta_h 13.362 kcal
+	-gamma 3.5 0.0
+
+# --- Redox del agua (para el pe); casi no influye en este sistema ---
+2 H2O = O2 + 4 H+ + 4 e-
+	-log_k -86.08
+	-delta_h 134.79 kcal
+2 H+ + 2 e- = H2
+	-log_k -3.15
+	-delta_h -1.759 kcal
+
+# --- Sistema del carbonato: CO2 <-> HCO3- <-> CO3-2 (controla el pH de muchas aguas) ---
+CO3-2 + H+ = HCO3-
+	-log_k 10.329
+	-delta_h -3.561 kcal
+	-gamma 5.4 0.0
+CO3-2 + 2 H+ = CO2 + H2O
+	-log_k 16.681
+	-delta_h -5.738 kcal
+	-gamma 0.0 0.066
+
+# --- Pares iónicos (complejos): consumen iones libres y cambian los resultados ---
+Ca+2 + CO3-2 = CaCO3
+	-log_k 3.224
+	-delta_h 3.545 kcal
+Ca+2 + CO3-2 + H+ = CaHCO3+
+	-log_k 10.91
+	-delta_h 4.38 kcal
+	-gamma 5.4 0.0
+Na+ + HCO3- = NaHCO3
+	-log_k -0.06
+	-delta_h 21 kJ
+	-gamma 0.0 0.2
+
+PHASES
+# Minerales y gases. Cada uno se define por su reacción de disolución.
+#   Índice de saturación SI = log(IAP / K):  SI > 0 sobresaturado, SI < 0 subsaturado.
+Calcite
+	CaCO3 = CO3-2 + Ca+2
+	-log_k -8.48
+	-delta_h -2.297 kcal
+Halite
+	NaCl = Cl- + Na+
+	log_k 1.57
+	-delta_h 1.37 kcal
+CO2(g)
+	CO2 = CO2
+	-log_k -1.468
+	-delta_h -4.776 kcal
+# Fases auxiliares: permiten fijar el pH o titular con ácido o base
+# (se usan con EQUILIBRIUM_PHASES, por ejemplo:  Fix_H+ -7.0 NaOH 10.0).
+Fix_H+
+	H+ = H+
+	log_k 0.0
+NaOH
+	NaOH = Na+ + OH-
+	log_k 10.0
+HCl
+	HCl = H+ + Cl-
+	log_k 10.0
+
+END

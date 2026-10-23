@@ -10,7 +10,7 @@ const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 
 /* ---------- Configuración ---------- */
 
-const BASES = [
+const BASES_DEF = [
   { f: "phreeqc.dat", n: "phreeqc.dat — general (recomendada)", guiada: true },
   { f: "wateq4f.dat", n: "wateq4f.dat — aguas naturales, muchos minerales", guiada: true },
   { f: "minteq.v4.dat", n: "minteq.v4.dat — MINTEQ v4", guiada: true },
@@ -43,13 +43,13 @@ const ELEMENTOS = [
   { el: "Zn", n: "Zinc (Zn)" },
 ];
 
-const MINERALES_HABITUALES = [
+const MINERALES_HABITUALES_DEF = [
   "Calcite", "Aragonite", "Dolomite", "Magnesite", "Siderite", "Rhodochrosite", "Strontianite",
   "Gypsum", "Anhydrite", "Barite", "Celestite", "Halite", "Fluorite",
   "Quartz", "Chalcedony", "SiO2(a)", "Brucite", "Gibbsite", "Kaolinite",
   "Fe(OH)3(a)", "Goethite", "Hematite", "Pyrite",
 ];
-const MINERALES_BARRIDO_DEFECTO = ["Calcite", "Aragonite", "Dolomite", "Gypsum", "Siderite", "Fe(OH)3(a)"];
+const MINERALES_BARRIDO_DEFECTO_DEF = ["Calcite", "Aragonite", "Dolomite", "Gypsum", "Siderite", "Fe(OH)3(a)"];
 
 const PRESETS = {
   "": { nombre: "— en blanco —", datos: {} },
@@ -70,7 +70,7 @@ const PRESETS = {
   },
 };
 
-const EJEMPLOS = [
+const EJEMPLOS_DEF = [
   ["ex1", "Ej. 1 — Agregar uranio y especiar agua de mar"],
   ["ex2", "Ej. 2 — Dependencia de la solubilidad con la temperatura"],
   ["ex3", "Ej. 3 — Equilibrio de calcita con CO₂"],
@@ -79,6 +79,33 @@ const EJEMPLOS = [
   ["ex6", "Ej. 6 — Reacciones hasta límites de fase"],
   ["ex7", "Ej. 7 — Descomposición de materia orgánica"],
 ];
+
+// Estos valores pueden reemplazarse desde config.json (sin tocar el código).
+let BASES = BASES_DEF;
+let EJEMPLOS = EJEMPLOS_DEF;
+let MINERALES_HABITUALES = MINERALES_HABITUALES_DEF;
+let MINERALES_BARRIDO_DEFECTO = MINERALES_BARRIDO_DEFECTO_DEF;
+
+async function cargarConfig() {
+  try {
+    const r = await fetch("config.json", { cache: "no-cache" });
+    if (!r.ok) return;
+    const c = await r.json();
+    if (Array.isArray(c.bases) && c.bases.length) BASES = c.bases.filter((b) => b && b.archivo).map((b) => ({ f: b.archivo, n: b.nombre || b.archivo, guiada: !!b.guiada }));
+    if (Array.isArray(c.ejemplos)) EJEMPLOS = c.ejemplos.filter((e) => e && e.archivo).map((e) => [e.archivo, e.nombre || e.archivo, e.base || "phreeqc.dat"]);
+    if (Array.isArray(c.minerales_habituales)) MINERALES_HABITUALES = c.minerales_habituales;
+    if (Array.isArray(c.minerales_barrido_defecto)) MINERALES_BARRIDO_DEFECTO = c.minerales_barrido_defecto;
+  } catch (e) { /* si falla, se usan los valores por defecto del código */ }
+}
+
+/* ---------- Constantes termodinámicas ---------- */
+const R_KJ = 8.314462618e-3;   // kJ/(mol·K)
+const F_CONST = 96485.33212;   // C/mol
+const LN10 = Math.LN10;
+// ΔG de la reacción de disolución (kJ/mol) = RT·ln(IAP/K) = 2,3026·R·T·SI
+const dG = (si, T) => LN10 * R_KJ * T * si;
+// Eh (V) = pe · 2,3026·R·T / F
+const Eh = (pe, T) => (pe * LN10 * R_KJ * 1000 * T) / F_CONST;
 
 /* ---------- Utilidades ---------- */
 
@@ -252,7 +279,8 @@ function construirFormulario() {
   selPre.addEventListener("change", () => aplicarPreset(selPre.value));
 
   const selBase = $("#base");
-  BASES.filter((b) => b.guiada).forEach((b) => selBase.add(new Option(b.n, b.f)));
+  const guiadas = BASES.filter((b) => b.guiada);
+  (guiadas.length ? guiadas : BASES).forEach((b) => selBase.add(new Option(b.n, b.f)));
   const selBaseA = $("#a-base");
   BASES.forEach((b) => selBaseA.add(new Option(b.n, b.f)));
 }
@@ -428,7 +456,7 @@ async function calcularMuestra() {
       $("#resultados-muestra").hidden = true;
       return;
     }
-    ultimo = { entrada, out: r.out, si: parsearSI(r.out), esp: parsearEspecies(r.out) };
+    ultimo = { entrada, out: r.out, si: parsearSI(r.out), esp: parsearEspecies(r.out), T: Number(parsearResumen(r.out).temp) + 273.15 };
     pintarResumen(parsearResumen(r.out));
     pintarSI();
     pintarEspecies();
@@ -451,6 +479,7 @@ function pintarResumen(r) {
   const datos = [
     ["pH", fmt(r.pH, 3)],
     ["pe", fmt(r.pe, 3)],
+    ["Eh (V)", fmt(Eh(Number(r.pe), Number(r.temp) + 273.15), 3), false, !Number.isFinite(Eh(Number(r.pe), Number(r.temp) + 273.15))],
     ["Temperatura (°C)", fmt(r.temp, 3)],
     ["Fuerza iónica (mol/kgw)", fmt(r.mu, 3)],
     ["Actividad del agua", fmt(r.aw, 4)],
@@ -477,10 +506,10 @@ function pintarSI() {
   filas = [...filas].sort((a, b) => b.si - a.si);
   const estado = (si) => (si > 0.05 ? ["sobre", "Sobresaturado"] : si < -0.05 ? ["sub", "Subsaturado"] : ["eq", "En equilibrio"]);
   $("#tabla-si").innerHTML =
-    `<thead><tr><th>Fase</th><th>SI</th><th>log IAP</th><th>log K</th><th>Estado</th><th>Fórmula</th></tr></thead><tbody>` +
+    `<thead><tr><th>Fase</th><th>SI</th><th>Ω = 10^SI</th><th>ΔG disolución (kJ/mol)</th><th>ΔG° (kJ/mol)</th><th>log IAP</th><th>log K (298 K)</th><th>Estado</th><th>Fórmula</th></tr></thead><tbody>` +
     (filas.length
-      ? filas.map((f) => { const [c, t] = estado(f.si); return `<tr><td>${esc(f.fase)}</td><td>${f.si.toFixed(2)}</td><td>${f.iap.toFixed(2)}</td><td>${f.k.toFixed(2)}</td><td><span class="badge ${c}">${t}</span></td><td>${esc(f.formula)}</td></tr>`; }).join("")
-      : `<tr><td colspan="6">No hay fases para mostrar con ese filtro.</td></tr>`) +
+      ? filas.map((f) => { const [c, t] = estado(f.si); const T = ultimo.T; const dg = dG(f.si, T); const dg0 = -LN10 * R_KJ * T * (f.iap - f.si); return `<tr><td>${esc(f.fase)}</td><td>${f.si.toFixed(2)}</td><td>${fmt(Math.pow(10, f.si), 3)}</td><td>${dg.toFixed(2)}</td><td>${dg0.toFixed(2)}</td><td>${f.iap.toFixed(2)}</td><td>${f.k.toFixed(2)}</td><td><span class="badge ${c}">${t}</span></td><td>${esc(f.formula)}</td></tr>`; }).join("")
+      : `<tr><td colspan="9">No hay fases para mostrar con ese filtro.</td></tr>`) +
     `</tbody>`;
 }
 
@@ -561,7 +590,7 @@ async function calcularBarrido() {
   // Para no mezclar unidades, la muestra base se calcula primero y sus totales se leen en mol/kgw.
   const elementos = [...new Set([...m.elems.map((e) => e.el).filter((e) => e !== "Alkalinity"), "C", "Cl", "Na"])];
   const entradaBase = `TITLE Solución base\nPRINT\n  -reset false\nSELECTED_OUTPUT\n  -file /sel.out\n  -reset false\n  -pH true\n  -totals ${elementos.join(" ")}\n${bloqueSolucion(1, m)}\nEND\n`;
-  const cab = ["SELECTED_OUTPUT", "  -file /sel.out", "  -reset false", "  -temperature true", "  -pH true", "  -ionic_strength true", "  -totals Cl Na"];
+  const cab = ["SELECTED_OUTPUT", "  -file /sel.out", "  -reset false", "  -temperature true", "  -pH true", "  -pe true", "  -ionic_strength true", "  -totals Cl Na"];
   if (minerales.length) cab.push("  -saturation_indices " + minerales.join(" "));
   if (especies.length) cab.push("  -molalities " + especies.join(" "));
 
@@ -625,8 +654,14 @@ async function calcularBarrido() {
       return;
     }
     // Ácido (−) o base (+) agregado = variación del Cl (o del Na) respecto de la muestra base.
-    filas = filas.map((f) => ({ ...f, titrante: (f.pH < pH0 ? -(f.Cl - cl0) : f.Na - na0) * 1000 }));
-    const cols = [...colsTSV.filter((c) => c !== "Cl" && c !== "Na"), "titrante"];
+    const colsSI = colsTSV.filter((c) => c.startsWith("si_"));
+    filas = filas.map((f) => {
+      const T = f.temp + 273.15;
+      const g = { ...f, titrante: (f.pH < pH0 ? -(f.Cl - cl0) : f.Na - na0) * 1000, eh: Eh(f.pe, T) };
+      colsSI.forEach((c) => { g["dg_" + c.slice(3)] = dG(f[c], T); });
+      return g;
+    });
+    const cols = [...colsTSV.filter((c) => c !== "Cl" && c !== "Na"), "titrante", ...colsSI.map((c) => "dg_" + c.slice(3)), "eh"];
     barrido = { cols, filas, entrada, pH0, dic };
     pintarBarrido();
     agregarAviso(textoAdvertencias({ advertencias: [...new Set(advert)] }));
@@ -644,7 +679,7 @@ async function calcularBarrido() {
   }
 }
 
-const etiquetaVar = (c) => (c === "mu" ? "Fuerza iónica (mol/kgw)" : c === "titrante" ? "Ácido (−) o base (+) agregado (mmol/kgw)" : c.startsWith("si_") ? "SI " + c.slice(3) : c.startsWith("m_") ? "Molalidad de " + c.slice(2) + " (mol/kgw)" : c);
+const etiquetaVar = (c) => (c === "mu" ? "Fuerza iónica (mol/kgw)" : c === "titrante" ? "Ácido (−) o base (+) agregado (mmol/kgw)" : c === "eh" ? "Eh (V)" : c === "pe" ? "pe" : c.startsWith("dg_") ? "ΔG de disolución de " + c.slice(3) + " (kJ/mol)" : c.startsWith("si_") ? "SI " + c.slice(3) : c.startsWith("m_") ? "Molalidad de " + c.slice(2) + " (mol/kgw)" : c);
 
 function variablesBarrido() {
   return barrido.cols.filter((c) => c !== "pH" && c !== "temp" && barrido.filas.some((f) => Number.isFinite(f[c])));
@@ -652,7 +687,7 @@ function variablesBarrido() {
 
 function pintarBarrido() {
   const vars = variablesBarrido();
-  const omitidas = barrido.cols.filter((c) => c !== "pH" && c !== "temp" && !vars.includes(c)).map((c) => c.replace(/^(si_|m_)/, ""));
+  const omitidas = barrido.cols.filter((c) => c !== "pH" && c !== "temp" && !vars.includes(c)).map((c) => c.replace(/^(si_|m_|dg_)/, ""));
   if (omitidas.length) mostrarAviso(`No se pudieron calcular: ${omitidas.join(", ")}. La muestra no contiene los elementos necesarios para esas fases o especies.`);
   const sel = $("#b-variable");
   const actual = sel.value;
@@ -777,7 +812,8 @@ function activarPestana(id) {
   mostrarAviso("");
 }
 
-function iniciar() {
+async function iniciar() {
+  await cargarConfig();
   construirFormulario();
   aplicarPreset("mar");
   $("#preset").value = "mar";
@@ -800,7 +836,9 @@ function iniciar() {
     if (!e.target.value) return;
     const r = await fetch("examples/" + e.target.value);
     $("#a-entrada").value = r.ok ? await r.text() : "";
-    $("#a-base").value = "phreeqc.dat";
+    const ej = EJEMPLOS.find((x) => x[0] === e.target.value);
+    const baseEj = ej && ej[2] ? ej[2] : "phreeqc.dat";
+    if ([...$("#a-base").options].some((o) => o.value === baseEj)) $("#a-base").value = baseEj;
   });
   $("#a-archivo").addEventListener("change", async (e) => {
     const f = e.target.files[0];
@@ -809,6 +847,30 @@ function iniciar() {
   $("#a-ejecutar").addEventListener("click", ejecutarAvanzado);
   $("#a-bajar").addEventListener("click", () => descargar("salida_phreeqc.out", ultimaAvanzada));
 
+  $("#base-propia").addEventListener("change", cargarBasePropia);
+
+  prepararMineralesBarrido().catch(() => {});
+}
+
+// Permite usar una base de datos .dat propia, leída solo en este navegador (no se sube a ningún lado).
+async function cargarBasePropia(e) {
+  const f = e.target.files[0];
+  if (!f) return;
+  const texto = await f.text();
+  if (!/SOLUTION_MASTER_SPECIES|SOLUTION_SPECIES/.test(texto)) {
+    mostrarAviso("Ese archivo no parece una base de datos de PHREEQC (no contiene SOLUTION_MASTER_SPECIES ni SOLUTION_SPECIES).");
+    e.target.value = "";
+    return;
+  }
+  const clave = "local:" + f.name;
+  cacheBases[clave] = texto;
+  const nombre = "Mi base: " + f.name;
+  ["#base", "#a-base"].forEach((sel) => {
+    const s = $(sel);
+    if (![...s.options].some((o) => o.value === clave)) s.add(new Option(nombre, clave));
+    s.value = clave;
+  });
+  mostrarAviso("");
   prepararMineralesBarrido().catch(() => {});
 }
 

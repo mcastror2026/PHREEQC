@@ -1,0 +1,23 @@
+TITLE Ejercicio 2.-- Solubilidad de la calcita a distintas presiones de CO2
+# Base de datos: didactica.dat
+# Pregunta: ¿por que el agua con mas CO2 disuelve mas calcita?
+# Tres simulaciones con pCO2 = 10^-3.4 (atmosfera), 10^-2.0 (suelo) y 10^-1.0 (suelo muy activo).
+# Mira en cada salida: pH, Ca total y alcalinidad.
+SOLUTION 1  Agua pura
+    temp 25
+EQUILIBRIUM_PHASES 1
+    Calcite 0.0 10.0
+    CO2(g) -3.4
+END
+SOLUTION 2  Agua pura
+    temp 25
+EQUILIBRIUM_PHASES 2
+    Calcite 0.0 10.0
+    CO2(g) -2.0
+END
+SOLUTION 3  Agua pura
+    temp 25
+EQUILIBRIUM_PHASES 3
+    Calcite 0.0 10.0
+    CO2(g) -1.0
+END

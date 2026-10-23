@@ -28,6 +28,40 @@ Todo el cálculo ocurre en el navegador de quien la usa; no hay servidor.
   Si el cálculo conjunto falla, repite punto a punto y omite los que no convergen.
 - **Archivo avanzado:** entrada de PHREEQC completa (se ejecuta en el navegador del usuario).
 
+### Parámetros derivados (se calculan en la página a partir de la salida de PHREEQC)
+- Ω = 10^SI.
+- ΔG de disolución (kJ/mol) = 2,3026·R·T·SI = RT·ln(IAP/K), para la reacción tal como está en la base.
+- ΔG° (kJ/mol) = −2,3026·R·T·log K(T), con log K(T) = log IAP − SI (el log K impreso por PHREEQC es el de 298 K).
+- Eh (V) = pe · 2,3026·R·T / F.
+- En el barrido se agregan `dg_<mineral>` (ΔG) y `eh` como variables del gráfico y la tabla.
+- Verificado a mano con el agua de mar (calcita: SI 0,79 → ΔG 4,51 kJ/mol, ΔG° 48,40 kJ/mol).
+
+## Agregar bases de datos, ejemplos o actualizar (sin tocar el código)
+La lista de bases, los ejemplos y los minerales habituales están en `sitio/config.json`.
+
+**Agregar una base de datos**
+1. Copiar el archivo `.dat` a `sitio/database/`.
+2. Agregar una entrada en `bases` de `config.json`, por ejemplo:
+   `{ "archivo": "mi_base.dat", "nombre": "mi_base.dat — descripción", "guiada": false }`
+   (`guiada: true` la ofrece también en el formulario; sirve si usa los mismos nombres de
+   elementos que `phreeqc.dat`).
+3. Subir los cambios (`git add`, `git commit`, `git push`); Netlify publica solo.
+
+**Agregar un ejemplo para el modo avanzado**
+1. Copiar el archivo de entrada a `sitio/examples/` (sin extensión o con la que quieras).
+2. Agregar una entrada en `ejemplos`:
+   `{ "archivo": "mi_ejemplo", "nombre": "Título visible", "base": "phreeqc.dat" }`.
+
+**Sin tocar el repositorio:** cada persona puede usar su propia base `.dat` con el selector
+"Usar una base propia" de la página; se lee solo en su navegador.
+
+**Actualizar PHREEQC:** recompilar según `COMPILACION.md` y reemplazar `sitio/phreeqc.js` y
+`sitio/phreeqc.wasm`; el resto no cambia. Después hay que repetir la validación (ejemplos 1 a 7).
+
+**Base didáctica:** `sitio/database/didactica.dat` (Ca–Na–Cl–carbonato, comentada en español) y
+los ejercicios `ped1` a `ped4` en `sitio/examples/`. No es apta para trabajo científico.
+Si `config.json` falta o tiene errores, la página usa una lista incorporada en `app.js`.
+
 ## Probar en local
 ```
 cd sitio
